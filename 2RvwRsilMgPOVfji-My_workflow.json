@@ -1,0 +1,299 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "b523b1e8-bce7-478b-937d-cc02fbf2ab22",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are a smart Weather Assistant.\n\nYour primary goal is to provide the user with accurate, concise, and useful weather updates for today.\n\nYou have access to the following tools:\n1. AirNow API (for real-time weather and air quality data)\n2. Gmail (to check location hints if needed)\n3. Calendar (to understand user's planned locations for today)\n4. GetWeather app (backup weather source)\n5. Excel sheet containing LTrek locations (for predefined travel locations)\n\nInstructions:\n- Always determine the most relevant location for the user:\n  - First check calendar events for today (location field)\n  - If unavailable, check LTrek Excel locations\n  - If still unclear, default to user's current location\n- Fetch current weather data using the AirNow API (primary source)\n- Include:\n  - Current temperature\n  - Weather condition (sunny, cloudy, rainy, etc.)\n  - Air quality index (AQI) if available\n  - Any important alerts (rain, heat, storm, etc.)\n- Keep the response short, clear, and conversational\n\nOutput format:\n- Start with a direct answer of today's weather\n- Example:\n  \"Today in [Location], it's [temperature]°C with [condition]. AQI is [value] ([category]). [Optional alert or suggestion]\"\n\nRules:\n- Do NOT mention tools or APIs in the final answer\n- Do NOT ask unnecessary follow-up questions\n- If multiple locations exist, prioritize the earliest calendar event\n- If no data is available, clearly say so and suggest retry\n\nTone:\n- Friendly, concise, and helpful\n- Slightly conversational, not robotic\n\nUse Gmail tool to send the generated weather report to the user",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "6b7f9471-b1a6-4689-a1e4-6a3edf817ff2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId || $execution.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        208
+      ],
+      "id": "6cb701e5-0fe9-4d8e-a134-9073661d1493",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "responsesApiEnabled": "={{ true }}",
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        208
+      ],
+      "id": "4876ef9e-381b-4d32-b638-a56c203517f2",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "nyac6q40JmUjMkYa",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "reshamchaudhari1303@gmail.com",
+          "mode": "list",
+          "cachedResultName": "your_email_id"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        208
+      ],
+      "id": "71d140f4-b93f-40fb-8804-480352863e24",
+      "name": "Check Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "cdnaYZLbiOgF4bxi",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1i2E3qzm7UKFQ_61LQ11xZoOqhbHxEV9Ydzitxjg3oaA",
+          "mode": "list",
+          "cachedResultName": "Trails",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i2E3qzm7UKFQ_61LQ11xZoOqhbHxEV9Ydzitxjg3oaA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i2E3qzm7UKFQ_61LQ11xZoOqhbHxEV9Ydzitxjg3oaA/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        480,
+        208
+      ],
+      "id": "ece04ffb-cd5c-47ec-b89f-59232540c6f8",
+      "name": "getTrailList",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tG6dflVWqG8FhIQv",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.airnowapi.org/aq/observation/zipCode/current/?format=application/json&zipCode=~zipCode~&distance=25&API_KEY=YOUR_API_KEY",
+        "options": {},
+        "optimizeResponse": true
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        640,
+        192
+      ],
+      "id": "214a66fa-3c42-4cef-bc2e-b1a0a9ec3834",
+      "name": "Air Quality"
+    },
+    {
+      "parameters": {
+        "format": "imperial",
+        "cityName": "Pune"
+      },
+      "type": "n8n-nodes-base.openWeatherMapTool",
+      "typeVersion": 1,
+      "position": [
+        240,
+        224
+      ],
+      "id": "7708647a-d33f-4ef6-b095-bcce6e0104e5",
+      "name": "getWeather",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "tZOrsmhcvvn8KII4",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "your_email_id",
+        "subject": "Weather Update",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        176
+      ],
+      "id": "af8620db-f60b-491a-aa55-47402e5dfbf1",
+      "name": "Send a message in Gmail",
+      "webhookId": "8d8564cc-b21a-4529-b72b-6944b6a3f275",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "OUKHX6xagHkGGpFr",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getTrailList": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Air Quality": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getWeather": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
